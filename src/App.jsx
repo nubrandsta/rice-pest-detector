@@ -64,7 +64,7 @@ const App = () => {
         <h1>PROJECT SKRIPSI</h1>
         <p>
           Deteksi penggunaan alat pelindung diri (APD) pada pekerja berbasis web
-          browser menggunakan YOLOv8 dan TensorFlow.js
+          browser menggunakan YOLOv8 dan TensorFlow.js.
         </p>
         <p>
           Serving: <code className="code">{modelName}</code>
