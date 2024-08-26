@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [react()],
   build: {
     chunkSizeWarningLimit: 2000, // handle warning on vendor.js bundle size
+    outDir: "dist", // output build ke folder 'dist'
   },
-  base: "/", // root base path
+  base: "/", // base path untuk aplikasi
 });
