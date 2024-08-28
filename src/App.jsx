@@ -1,3 +1,4 @@
+// App.jsx
 import React, { useState, useEffect, useRef } from "react";
 import * as tf from "@tensorflow/tfjs";
 import "@tensorflow/tfjs-backend-webgl";
@@ -12,6 +13,8 @@ const App = () => {
     net: null,
     inputShape: [1, 0, 0, 3],
   });
+  const [cameraActive, setCameraActive] = useState(false);
+  const [cameraFacingMode, setCameraFacingMode] = useState("user");
   const imageRef = useRef(null);
   const cameraRef = useRef(null);
   const videoRef = useRef(null);
@@ -38,23 +41,38 @@ const App = () => {
       });
       tf.dispose([warmupResults, dummyInput]);
     });
-
-    // Mengakses kamera
-    const getCamera = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "user" },
-        });
-        if (cameraRef.current) {
-          cameraRef.current.srcObject = stream;
-        }
-      } catch (err) {
-        console.error("Error accessing webcam: ", err);
-      }
-    };
-
-    getCamera();
   }, []);
+
+  const getCamera = async (facingMode = "user") => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode },
+      });
+      if (cameraRef.current) {
+        cameraRef.current.srcObject = stream;
+      }
+    } catch (err) {
+      console.error("Error accessing webcam: ", err);
+    }
+  };
+
+  const handleCameraToggle = () => {
+    if (cameraActive) {
+      setCameraActive(false);
+      cameraRef.current.srcObject?.getTracks().forEach((track) => track.stop()); // Stop all video tracks
+    } else {
+      getCamera(cameraFacingMode);
+      setCameraActive(true);
+    }
+  };
+
+  const switchCamera = () => {
+    const newMode = cameraFacingMode === "user" ? "environment" : "user";
+    setCameraFacingMode(newMode);
+    if (cameraActive) {
+      getCamera(newMode);
+    }
+  };
 
   return (
     <div className="App">
@@ -102,6 +120,8 @@ const App = () => {
         imageRef={imageRef}
         cameraRef={cameraRef}
         videoRef={videoRef}
+        handleCameraToggle={handleCameraToggle}
+        switchCamera={switchCamera}
       />
     </div>
   );
