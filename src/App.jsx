@@ -1,4 +1,3 @@
-// App.jsx
 import React, { useState, useEffect, useRef } from "react";
 import * as tf from "@tensorflow/tfjs";
 import "@tensorflow/tfjs-backend-webgl";
@@ -13,8 +12,7 @@ const App = () => {
     net: null,
     inputShape: [1, 0, 0, 3],
   });
-  const [cameraActive, setCameraActive] = useState(false);
-  const [cameraFacingMode, setCameraFacingMode] = useState("user");
+  const [cameraFacingMode, setCameraFacingMode] = useState("user"); // State untuk jenis kamera
   const imageRef = useRef(null);
   const cameraRef = useRef(null);
   const videoRef = useRef(null);
@@ -22,7 +20,6 @@ const App = () => {
   const modelName = "yolov8n";
 
   useEffect(() => {
-    // Menunggu TensorFlow.js siap
     tf.ready().then(async () => {
       const yolov8 = await tf.loadGraphModel(
         `${window.location.href}/${modelName}_web_model/model.json`,
@@ -41,9 +38,12 @@ const App = () => {
       });
       tf.dispose([warmupResults, dummyInput]);
     });
-  }, []);
 
-  const getCamera = async (facingMode = "user") => {
+    // Memuat kamera dengan mode yang sesuai
+    getCamera(cameraFacingMode);
+  }, [cameraFacingMode]);
+
+  const getCamera = async (facingMode) => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode },
@@ -56,22 +56,12 @@ const App = () => {
     }
   };
 
-  const handleCameraToggle = () => {
-    if (cameraActive) {
-      setCameraActive(false);
-      cameraRef.current.srcObject?.getTracks().forEach((track) => track.stop()); // Stop all video tracks
-    } else {
-      getCamera(cameraFacingMode);
-      setCameraActive(true);
-    }
-  };
-
   const switchCamera = () => {
-    const newMode = cameraFacingMode === "user" ? "environment" : "user";
-    setCameraFacingMode(newMode);
-    if (cameraActive) {
+    setCameraFacingMode((prevMode) => {
+      const newMode = prevMode === "user" ? "environment" : "user";
       getCamera(newMode);
-    }
+      return newMode;
+    });
   };
 
   return (
@@ -115,13 +105,12 @@ const App = () => {
           height={model.inputShape[2]}
           ref={canvasRef}
         />
+        <button onClick={switchCamera}>Switch Camera</button>
       </div>
       <ButtonHandler
         imageRef={imageRef}
         cameraRef={cameraRef}
         videoRef={videoRef}
-        handleCameraToggle={handleCameraToggle}
-        switchCamera={switchCamera}
       />
     </div>
   );
