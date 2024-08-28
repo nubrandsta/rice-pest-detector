@@ -12,13 +12,6 @@
     "type": "git",
     "url": "git+https://github.com/glng-swndru/project-skripsi.git"
   },
-  "keywords": [
-    "object detection",
-    "yolov8",
-    "javascript",
-    "react",
-    "tensorflow.js"
-  ],
   "author": "Gilang Swandaru",
   "license": "MIT",
   "dependencies": {
