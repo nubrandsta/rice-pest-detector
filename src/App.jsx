@@ -12,7 +12,6 @@ const App = () => {
     net: null,
     inputShape: [1, 0, 0, 3],
   });
-  const [cameraFacingMode, setCameraFacingMode] = useState("user"); // State untuk jenis kamera
   const imageRef = useRef(null);
   const cameraRef = useRef(null);
   const videoRef = useRef(null);
@@ -20,6 +19,7 @@ const App = () => {
   const modelName = "yolov8n";
 
   useEffect(() => {
+    // Menunggu TensorFlow.js siap
     tf.ready().then(async () => {
       const yolov8 = await tf.loadGraphModel(
         `${window.location.href}/${modelName}_web_model/model.json`,
@@ -39,29 +39,39 @@ const App = () => {
       tf.dispose([warmupResults, dummyInput]);
     });
 
-    // Memuat kamera dengan mode yang sesuai
-    getCamera(cameraFacingMode);
-  }, [cameraFacingMode]);
+    // Mengakses kamera
+    const getCamera = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "user" },
+        });
+        if (cameraRef.current) {
+          cameraRef.current.srcObject = stream;
+        }
+      } catch (err) {
+        console.error("Error accessing webcam: ", err);
+      }
+    };
 
-  const getCamera = async (facingMode) => {
-    try {
+    getCamera();
+  }, []);
+
+  const switchCamera = async () => {
+    const videoTracks = cameraRef.current.srcObject?.getVideoTracks();
+    if (videoTracks && videoTracks.length > 0) {
+      const currentTrack = videoTracks[0];
+      const facingMode =
+        currentTrack.getSettings().facingMode === "user"
+          ? "environment"
+          : "user";
+
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode },
       });
-      if (cameraRef.current) {
-        cameraRef.current.srcObject = stream;
-      }
-    } catch (err) {
-      console.error("Error accessing webcam: ", err);
-    }
-  };
 
-  const switchCamera = () => {
-    setCameraFacingMode((prevMode) => {
-      const newMode = prevMode === "user" ? "environment" : "user";
-      getCamera(newMode);
-      return newMode;
-    });
+      cameraRef.current.srcObject?.getTracks().forEach((track) => track.stop()); // Stop previous tracks
+      cameraRef.current.srcObject = stream;
+    }
   };
 
   return (
@@ -101,16 +111,16 @@ const App = () => {
           onPlay={() => detectVideo(videoRef.current, model, canvasRef.current)}
         />
         <canvas
-          width={model.inputShape[1]}
-          height={model.inputShape[2]}
+          width={model.inputShape[2]} // Adjusted for proper bounding box
+          height={model.inputShape[1]} // Adjusted for proper bounding box
           ref={canvasRef}
         />
-        <button onClick={switchCamera}>Switch Camera</button>
       </div>
       <ButtonHandler
         imageRef={imageRef}
         cameraRef={cameraRef}
         videoRef={videoRef}
+        switchCamera={switchCamera}
       />
     </div>
   );
