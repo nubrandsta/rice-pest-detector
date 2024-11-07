@@ -61,10 +61,9 @@ const App = () => {
         <Loader>Loading model... {(loading.progress * 100).toFixed(2)}%</Loader>
       )}
       <div className="header">
-        <h1>PROJECT SKRIPSI</h1>
+        <h1>Deteksi Hama Beras</h1>
         <p>
-          Deteksi penggunaan alat pelindung diri (APD) pada pekerja berbasis web
-          browser menggunakan YOLOv8 dan TensorFlow.js.
+          Deteksi hama beras sytophilus dan oryzaephilus menggunakan YOLOv11s.
         </p>
         <p>
           Serving: <code className="code">{modelName}</code>

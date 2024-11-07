@@ -1,6 +1,6 @@
 {
-  "name": "yolov8-tfjs",
-  "description": "Object detection application right in your browser using YOLOv8 and Tensorflow.js",
+  "name": "yolov11s-tfjs",
+  "description": "Object detection application right in your browser using YOLOv11 and Tensorflow.js",
   "version": "1.0.0",
   "scripts": {
     "start": "vite",
@@ -10,9 +10,9 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/glng-swndru/project-skripsi.git"
+    "url": "git+https://github.com/nubrandsta/rice-pest-detector"
   },
-  "author": "Gilang Swandaru",
+  "author": "Salma",
   "license": "MIT",
   "dependencies": {
     "@tensorflow/tfjs": "^4.1.0",
