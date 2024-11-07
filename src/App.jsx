@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
 import * as tf from "@tensorflow/tfjs";
 import "@tensorflow/tfjs-backend-webgl"; // Menggunakan backend WebGL untuk TensorFlow.js
-import Loader from "./components/loader"; // Komponen untuk menampilkan loading state
+import React, { useEffect, useRef, useState } from "react";
 import ButtonHandler from "./components/btn-handler"; // Komponen untuk meng-handle tombol aksi
-import { detect, detectVideo } from "./utils/detect"; // Fungsi untuk deteksi gambar dan video
+import Loader from "./components/loader"; // Komponen untuk menampilkan loading state
 import "./style/App.css"; // Gaya CSS aplikasi
+import { detect, detectVideo } from "./utils/detect"; // Fungsi untuk deteksi gambar dan video
 
 const App = () => {
   // State untuk menangani status loading model
@@ -23,13 +23,13 @@ const App = () => {
   const canvasRef = useRef(null);
 
   // Nama model yang digunakan
-  const modelName = "yolov8n";
+  const modelName = "yolov11s";
 
   useEffect(() => {
     // Menunggu TensorFlow.js siap
     tf.ready().then(async () => {
       // Memuat model YOLOv8 dari URL
-      const yolov8 = await tf.loadGraphModel(
+      const yolov11 = await tf.loadGraphModel(
         `${window.location.href}/${modelName}_web_model/model.json`,
         {
           onProgress: (fractions) => {
@@ -40,14 +40,14 @@ const App = () => {
       );
 
       // Melakukan pemanasan model dengan input dummy
-      const dummyInput = tf.ones(yolov8.inputs[0].shape);
-      const warmupResults = yolov8.execute(dummyInput);
+      const dummyInput = tf.ones(yolov11.inputs[0].shape);
+      const warmupResults = yolov11.execute(dummyInput);
 
       // Mengupdate state setelah model siap
       setLoading({ loading: false, progress: 1 });
       setModel({
-        net: yolov8,
-        inputShape: yolov8.inputs[0].shape,
+        net: yolov11,
+        inputShape: yolov11.inputs[0].shape,
       });
 
       // Membersihkan memori
