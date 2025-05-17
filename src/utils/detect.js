@@ -1,6 +1,6 @@
 import * as tf from "@tensorflow/tfjs";
-import { renderBoxes } from "./renderBox";
 import labels from "./labels.json";
+import { renderBoxes } from "./renderBox";
 
 const numClass = labels.length;
 
@@ -12,30 +12,37 @@ const numClass = labels.length;
  * @returns input tensor, xRatio and yRatio
  */
 const preprocess = (source, modelWidth, modelHeight) => {
-  let xRatio, yRatio; // ratios for boxes
+  let xScale, yScale, padLeft, padTop, inputW, inputH;
 
-  const input = tf.tidy(() => {
-    const img = tf.browser.fromPixels(source);
+  const img = tf.browser.fromPixels(source);
+  const [h, w] = img.shape.slice(0, 2);
+  const maxSize = Math.max(w, h);
 
-    // padding image to square => [n, m] to [n, n], n > m
-    const [h, w] = img.shape.slice(0, 2); // get source width and height
-    const maxSize = Math.max(w, h); // get max size
-    const imgPadded = img.pad([
-      [0, maxSize - h], // padding y [bottom only]
-      [0, maxSize - w], // padding x [right only]
-      [0, 0],
-    ]);
+  // Calculate padding
+  padTop = 0;
+  padLeft = 0;
+  if (h < maxSize) padTop = maxSize - h;
+  if (w < maxSize) padLeft = maxSize - w;
 
-    xRatio = maxSize / w; // update xRatio
-    yRatio = maxSize / h; // update yRatio
+  // Pad to square
+  const imgPadded = img.pad([
+    [0, maxSize - h], // bottom
+    [0, maxSize - w], // right
+    [0, 0],
+  ]);
 
-    return tf.image
-      .resizeBilinear(imgPadded, [modelWidth, modelHeight]) // resize frame
-      .div(255.0) // normalize
-      .expandDims(0); // add batch
-  });
+  // Scale from padded square to model input
+  xScale = w / maxSize;
+  yScale = h / maxSize;
+  inputW = w;
+  inputH = h;
 
-  return [input, xRatio, yRatio];
+  const input = tf.image
+    .resizeBilinear(imgPadded, [modelWidth, modelHeight])
+    .div(255.0)
+    .expandDims(0);
+
+  return [input, {xScale, yScale, padLeft, padTop, inputW, inputH, modelWidth, modelHeight, maxSize}];
 };
 
 /**
@@ -49,7 +56,7 @@ export const detect = async (source, model, canvasRef, callback = () => {}) => {
   const [modelWidth, modelHeight] = model.inputShape.slice(1, 3); // get model width and height
 
   tf.engine().startScope(); // start scoping tf engine
-  const [input, xRatio, yRatio] = preprocess(source, modelWidth, modelHeight); // preprocess image
+  const [input, scaleInfo] = preprocess(source, modelWidth, modelHeight); // preprocess image
 
   const res = model.net.execute(input); // inference model
   const transRes = res.transpose([0, 2, 1]); // transpose result [b, det, n] => [b, n, det]
@@ -83,7 +90,7 @@ export const detect = async (source, model, canvasRef, callback = () => {}) => {
   const scores_data = scores.gather(nms, 0).dataSync(); // indexing scores by nms index
   const classes_data = classes.gather(nms, 0).dataSync(); // indexing classes by nms index
 
-  renderBoxes(canvasRef, boxes_data, scores_data, classes_data, [xRatio, yRatio], source); // render boxes
+  renderBoxes(canvasRef, boxes_data, scores_data, classes_data, scaleInfo, source); // render boxes
   tf.dispose([res, transRes, boxes, scores, classes, nms]); // clear memory
 
   // Call the callback with loading state set to false

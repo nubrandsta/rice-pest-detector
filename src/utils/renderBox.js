@@ -6,9 +6,9 @@ import labels from "./labels.json";
  * @param {Array} boxes_data boxes array
  * @param {Array} scores_data scores array
  * @param {Array} classes_data class array
- * @param {Array[Number]} ratios boxes ratio [xRatio, yRatio]
+ * @param {Object} scaleInfo scale information
  */
-export const renderBoxes = (canvasRef, boxes_data, scores_data, classes_data, ratios, originalImageElement) => {
+export const renderBoxes = (canvasRef, boxes_data, scores_data, classes_data, scaleInfo, originalImageElement) => {
   const ctx = canvasRef.getContext("2d");
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height); // clean canvas
 
@@ -45,10 +45,19 @@ export const renderBoxes = (canvasRef, boxes_data, scores_data, classes_data, ra
     const score = (scores_data[i] * 100).toFixed(1);
 
     let [y1, x1, y2, x2] = boxes_data.slice(i * 4, (i + 1) * 4);
-    x1 *= ratios[0];
-    x2 *= ratios[0];
-    y1 *= ratios[1];
-    y2 *= ratios[1];
+
+    // Map from model input size to padded square
+    x1 = x1 * (scaleInfo.maxSize / scaleInfo.modelWidth);
+    x2 = x2 * (scaleInfo.maxSize / scaleInfo.modelWidth);
+    y1 = y1 * (scaleInfo.maxSize / scaleInfo.modelHeight);
+    y2 = y2 * (scaleInfo.maxSize / scaleInfo.modelHeight);
+
+    // Clamp to original image region
+    x1 = Math.min(x1, scaleInfo.inputW);
+    x2 = Math.min(x2, scaleInfo.inputW);
+    y1 = Math.min(y1, scaleInfo.inputH);
+    y2 = Math.min(y2, scaleInfo.inputH);
+
     const width = x2 - x1;
     const height = y2 - y1;
 
