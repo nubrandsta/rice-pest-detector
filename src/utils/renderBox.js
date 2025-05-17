@@ -44,38 +44,11 @@ export const renderBoxes = (canvasRef, boxes_data, scores_data, classes_data, ra
     const color = colors.get(classes_data[i]);
     const score = (scores_data[i] * 100).toFixed(1);
 
-    
-    let [y1_orig, x1_orig, y2_orig, x2_orig] = boxes_data.slice(i * 4, (i + 1) * 4);
-
-    // The `canvasRef` for detection now has the dimensions of the original image.
-    // The original image is drawn at (0,0) on this canvas, filling it.
-    // The `ratios` from `preprocess` are: 
-    //   ratios[0] = model_input_width / original_image_width
-    //   ratios[1] = model_input_height / original_image_height
-    // `boxes_data` (x1_orig, y1_orig, etc.) are coordinates relative to the model's input tensor dimensions.
-    // To get coordinates on the original image (which is now the canvas itself):
-    //   x_on_original_image = x1_orig / ratios[0]
-    //   y_on_original_image = y1_orig / ratios[1]
-
-    // Ensure the ratios are calculated correctly in preprocess
-    // The ratios should be model_input_dimension / original_image_dimension
-    // If the ratios are incorrect, adjust them here
-    
-    // Adjust the scaling logic if necessary
-    // Verify ratios calculation from preprocess
-    // Ratios should be [modelWidth/originalWidth, modelHeight/originalHeight]
-    // Revert to division-based scaling
-    const x1 = x1_orig * ratios[1];
-    const y1 = y1_orig * ratios[0];
-    const x2 = x2_orig * ratios[1];
-    const y2 = y2_orig * ratios[0];
-    
-    // Remove multiplication approach
-    // const x1 = x1_orig * ratios[0];
-    // const y1 = y1_orig * ratios[1];
-    // const x2 = x2_orig * ratios[0];
-    // const y2 = y2_orig * ratios[1];
-
+    let [y1, x1, y2, x2] = boxes_data.slice(i * 4, (i + 1) * 4);
+    x1 *= ratios[0];
+    x2 *= ratios[0];
+    y1 *= ratios[1];
+    y2 *= ratios[1];
     const width = x2 - x1;
     const height = y2 - y1;
 
