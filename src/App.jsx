@@ -56,39 +56,58 @@ const App = () => {
 
   return (
     <div className="App">
+      <header className="navbar">
+        <h1>Deteksi Hama Beras</h1>
+      </header>
       {loading.loading && (
-        <Loader>Loading model... {(loading.progress * 100).toFixed(2)}%</Loader>
+        <Loader>Memuat model... {(loading.progress * 100).toFixed(2)}%</Loader>
       )}
-      <div className="header">
-        <h1>Rice Pest Detection</h1>
-        <p>
-          Deteksi hama beras Sitophilus dan Oryzaephilus menggunakan YOLOv11s.
-        </p>
-        <p>
-          Serving: <code className="code">{modelName}</code>
-        </p>
-      </div>
-
-      <div className="content">
-        {/* Gambar yang akan dideteksi */}
-        <img
-          src="#"
-          ref={imageRef}
-          onLoad={() => detect(imageRef.current, model, canvasRef.current)}
-        />
-
-        {/* Canvas untuk menampilkan hasil deteksi */}
-        <canvas
-          width={model.inputShape[1]}
-          height={model.inputShape[2]}
-          ref={canvasRef}
-        />
-      </div>
-
-      {/* Komponen tombol untuk meng-handle aksi */}
-      <ButtonHandler
-        imageRef={imageRef}
-      />
+      <main className="dashboard-content">
+        <div className="image-display-area">
+          <div className="image-container">
+            <h2>Gambar Asli</h2>
+            <img
+              src="#"
+              ref={imageRef}
+              onLoad={() => {
+                detect(imageRef.current, model, canvasRef.current);
+                // Display the original image as well
+                const originalImageCanvas = document.getElementById('originalImageCanvas');
+                if (originalImageCanvas && imageRef.current.src !== '#') {
+                  const ctx = originalImageCanvas.getContext('2d');
+                  originalImageCanvas.width = imageRef.current.naturalWidth;
+                  originalImageCanvas.height = imageRef.current.naturalHeight;
+                  ctx.drawImage(imageRef.current, 0, 0, imageRef.current.naturalWidth, imageRef.current.naturalHeight);
+                }
+              }}
+              style={{ display: 'none' }} // Initially hidden, shown by ButtonHandler
+            />
+            <canvas id="originalImageCanvas" style={{ maxWidth: '100%', maxHeight: '400px' }}></canvas>
+          </div>
+          <div className="image-container">
+            <h2>Gambar Terdeteksi</h2>
+            {/* Canvas untuk menampilkan hasil deteksi */}
+            <canvas
+              width={model.inputShape[1]}
+              height={model.inputShape[2]}
+              ref={canvasRef}
+              style={{ maxWidth: '100%', maxHeight: '400px' }}
+            />
+          </div>
+        </div>
+        <div className="controls-area">
+          <p>
+            Deteksi hama beras Sitophilus dan Oryzaephilus menggunakan YOLOv11s.
+          </p>
+          <p>
+            Model: <code className="code">{modelName}</code>
+          </p>
+          {/* Komponen tombol untuk meng-handle aksi */}
+          <ButtonHandler
+            imageRef={imageRef}
+          />
+        </div>
+      </main>
     </div>
   );
 };

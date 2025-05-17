@@ -1,73 +1,146 @@
 .App {
-  height: 100%;
-  padding: 0 10px;
-  position: relative;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
+  min-height: 100vh;
+  background-color: #f4f7f6; /* Light gray background for the app */
 }
 
-.App > * {
-  margin: 3px 0;
-}
-
-.header {
+.navbar {
+  background-color: #2c3e50; /* Dark blue for navbar */
+  color: white;
+  padding: 1rem 2rem;
   text-align: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.header p {
-  margin: 5px 0;
+.navbar h1 {
+  margin: 0;
+  font-size: 1.8rem;
 }
 
-.code {
-  padding: 5px;
-  color: greenyellow;
-  background-color: black;
-  border-radius: 5px;
+.dashboard-content {
+  display: flex;
+  flex-direction: column; /* Stack image display and controls vertically */
+  flex-grow: 1;
+  padding: 2rem;
+  gap: 2rem; /* Space between image area and controls */
+  align-items: center; /* Center content horizontally */
+}
+
+.image-display-area {
+  display: flex;
+  gap: 2rem; /* Space between original and detected image containers */
+  justify-content: center; /* Center image containers */
+  width: 100%;
+  max-width: 1200px; /* Max width for the image display area */
+}
+
+.image-container {
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  flex: 1; /* Allow containers to grow and fill space */
+  min-width: 300px; /* Minimum width for each container */
+}
+
+.image-container h2 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: #34495e; /* Darker text color for headings */
+}
+
+.image-container img,
+.image-container canvas {
+  max-width: 100%;
+  max-height: 400px; /* Consistent max height for images/canvas */
+  object-fit: contain;
+  border-radius: 4px;
+  border: 1px solid #ddd; /* Light border for images/canvas */
 }
 
 .content > img {
-  display: none;
-  width: 100%;
-  max-width: 720px;
-  max-height: 500px;
-  border-radius: 10px;
+  display: none; /* Ensure original img tag used for loading is hidden if not styled by image-container */
 }
 
-.content > video {
-  display: none;
-  width: 100%;
-  max-width: 720px;
-  max-height: 500px;
-  border-radius: 10px;
-}
-
-.content {
-  position: relative;
-}
-
-.content > canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-}
-
-button {
-  text-decoration: none;
-  color: white;
-  background-color: black;
-  border: 2px solid black;
-  margin: 0 5px;
-  padding: 5px;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-button:hover {
-  color: black;
+.controls-area {
   background-color: white;
-  border: 2px solid black;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  max-width: 600px; /* Max width for the controls area */
+  text-align: center;
+}
+
+.controls-area .code {
+  padding: 0.2rem 0.4rem;
+  background-color: #e9ecef; /* Lighter background for code */
+  border-radius: 0.2rem;
+  color: #c7254e; /* Bootstrap's code color */
+}
+
+.btn-container {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem; /* Add some space above the button */
+}
+
+.btn-container button {
+  padding: 0.8rem 1.5rem; /* Slightly larger padding */
+  border: none;
+  border-radius: 5px; /* More rounded corners */
+  background-color: #3498db; /* A pleasant blue */
+  color: white;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.btn-container button:hover {
+  background-color: #2980b9; /* Darker blue on hover */
+  transform: translateY(-1px); /* Slight lift on hover */
+}
+
+.btn-container button:active {
+  transform: translateY(0px); /* Remove lift on active */
+}
+
+.btn-container button:disabled {
+  background-color: #bdc3c7; /* Gray for disabled */
+  cursor: not-allowed;
+  transform: translateY(0px);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .dashboard-content {
+    padding: 1rem;
+  }
+  .image-display-area {
+    flex-direction: column; /* Stack image containers vertically on smaller screens */
+    gap: 1rem;
+  }
+  .image-container {
+    min-width: unset; /* Remove min-width on smaller screens */
+  }
+  .controls-area {
+    max-width: 100%;
+  }
+  .navbar h1 {
+    font-size: 1.5rem;
+  }
+  .btn-container button {
+    padding: 0.7rem 1rem;
+    font-size: 0.9rem;
+  }
 }

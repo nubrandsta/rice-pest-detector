@@ -32,7 +32,7 @@ const ButtonHandler = ({ imageRef }) => {
         onChange={(e) => {
           const url = URL.createObjectURL(e.target.files[0]); // Membuat URL blob untuk gambar
           imageRef.current.src = url; // Menetapkan source gambar
-          imageRef.current.style.display = "block"; // Menampilkan gambar
+          // imageRef.current.style.display = "block"; // Original image is now shown on a canvas
           setStreaming("image"); // Mengatur status streaming ke image
         }}
         ref={inputImageRef}
