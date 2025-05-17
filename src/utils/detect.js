@@ -83,7 +83,7 @@ export const detect = async (source, model, canvasRef, callback = () => {}) => {
   const scores_data = scores.gather(nms, 0).dataSync(); // indexing scores by nms index
   const classes_data = classes.gather(nms, 0).dataSync(); // indexing classes by nms index
 
-  renderBoxes(canvasRef, boxes_data, scores_data, classes_data, [xRatio, yRatio]); // render boxes
+  renderBoxes(canvasRef, boxes_data, scores_data, classes_data, [xRatio, yRatio], source); // render boxes
   tf.dispose([res, transRes, boxes, scores, classes, nms]); // clear memory
 
   callback();
