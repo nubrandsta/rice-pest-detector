@@ -86,7 +86,8 @@ export const detect = async (source, model, canvasRef, callback = () => {}) => {
   renderBoxes(canvasRef, boxes_data, scores_data, classes_data, [xRatio, yRatio], source); // render boxes
   tf.dispose([res, transRes, boxes, scores, classes, nms]); // clear memory
 
-  callback();
+  // Call the callback with loading state set to false
+  callback({ loading: false, progress: 1 });
 
   tf.engine().endScope(); // end of scoping
 };

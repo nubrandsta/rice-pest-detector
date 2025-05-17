@@ -29,7 +29,7 @@ const App = () => {
   // Effect hook for loading the TensorFlow.js model
   useEffect(() => {
     setLoading({ loading: true, progress: 0 });
-    loadAndWarmUpModel(`/model/${modelName}_web_model/model.json`, {
+    loadAndWarmUpModel(`yolov11s_web_model/model.json`, {
       onProgress: (fractions) => {
         setLoading({ loading: true, progress: fractions });
       },

@@ -57,10 +57,24 @@ export const renderBoxes = (canvasRef, boxes_data, scores_data, classes_data, ra
     //   x_on_original_image = x1_orig / ratios[0]
     //   y_on_original_image = y1_orig / ratios[1]
 
-    const x1 = x1_orig / ratios[0];
-    const y1 = y1_orig / ratios[1];
-    const x2 = x2_orig / ratios[0];
-    const y2 = y2_orig / ratios[1];
+    // Ensure the ratios are calculated correctly in preprocess
+    // The ratios should be model_input_dimension / original_image_dimension
+    // If the ratios are incorrect, adjust them here
+    
+    // Adjust the scaling logic if necessary
+    // Verify ratios calculation from preprocess
+    // Ratios should be [modelWidth/originalWidth, modelHeight/originalHeight]
+    // Revert to division-based scaling
+    const x1 = x1_orig * ratios[1];
+    const y1 = y1_orig * ratios[0];
+    const x2 = x2_orig * ratios[1];
+    const y2 = y2_orig * ratios[0];
+    
+    // Remove multiplication approach
+    // const x1 = x1_orig * ratios[0];
+    // const y1 = y1_orig * ratios[1];
+    // const x2 = x2_orig * ratios[0];
+    // const y2 = y2_orig * ratios[1];
 
     const width = x2 - x1;
     const height = y2 - y1;
