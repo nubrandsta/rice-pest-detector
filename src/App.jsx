@@ -5,6 +5,7 @@ import ButtonHandler from "./components/btn-handler"; // Komponen untuk meng-han
 import Loader from "./components/loader"; // Komponen untuk menampilkan loading state
 import "./style/App.css"; // Gaya CSS aplikasi
 import { detect } from "./utils/detect"; // Fungsi untuk deteksi gambar
+import { loadAndWarmUpModel } from "./utils/tfUtils"; // Helper for model loading and warmup
 
 const App = () => {
   document.title = "Rice Pest Detection"; // Set site title
@@ -20,48 +21,72 @@ const App = () => {
   // Referensi ke elemen-elemen DOM
   const imageRef = useRef(null);
   const canvasRef = useRef(null);
+  const [imageShow, setImageShow] = useState(false); // State to control image visibility
 
   // Nama model yang digunakan
   const modelName = "yolov11s";
 
+  // Effect hook for loading the TensorFlow.js model
+  useEffect(() => {
+    setLoading({ loading: true, progress: 0 });
+    loadAndWarmUpModel(`/model/${modelName}_web_model/model.json`, {
+      onProgress: (fractions) => {
+        setLoading({ loading: true, progress: fractions });
+      },
+    })
+      .then((loadedModel) => {
+        setModel({
+          net: loadedModel,
+          inputShape: loadedModel.inputs[0].shape,
+        });
+        setLoading({ loading: false, progress: 1 });
+      })
+      .catch((error) => {
+        console.error("Gagal memuat model:", error); // Indonesian error
+        setLoading({ loading: false, progress: 0 }); // Ensure loading state is fully reset
+        // You might want to show an error message to the user here
+      });
+  }, [modelName]); // Re-run if modelName changes (though it's constant here)
+
+
+  // Effect hook for running detection when image and model are ready
   useEffect(() => {
     if (
       imageShow &&
       imageRef.current &&
       imageRef.current.src &&
       imageRef.current.src !== "#" &&
-      imageRef.current.complete && // Crucial: ensure image is loaded for naturalWidth/Height
-      model &&
-      inputOutputCanvasRef.current
+      imageRef.current.complete &&
+      model && model.net && // Crucially, check model.net is loaded
+      canvasRef.current // Use the defined canvasRef
     ) {
       // Set detection canvas dimensions to match the original image
-      inputOutputCanvasRef.current.width = imageRef.current.naturalWidth;
-      inputOutputCanvasRef.current.height = imageRef.current.naturalHeight;
+      canvasRef.current.width = imageRef.current.naturalWidth;
+      canvasRef.current.height = imageRef.current.naturalHeight;
 
       detect(
         imageRef.current,
-        model,
-        inputOutputCanvasRef.current,
-        setLoading // detect function will call setLoading(true/false)
+        model, // Pass the whole model state (which includes .net and .inputShape)
+        canvasRef.current,
+        (newLoadingState) => setLoading(prev => ({...prev, ...newLoadingState, loading: newLoadingState.loading === undefined ? prev.loading : newLoadingState.loading})) // Pass setLoading to detect
       ).catch(error => {
         console.error("Deteksi gagal:", error); // Indonesian error
-        setLoading(false); // Fallback for safety, ensure loading indicator is turned off
+        setLoading({ loading: false, progress: 0 }); // Fallback for safety
       });
     } else if (!imageShow) {
-      // Clear both canvases when no image is shown
-      if (inputOutputCanvasRef.current) {
-        const ctxDetect = inputOutputCanvasRef.current.getContext("2d");
-        ctxDetect.clearRect(0, 0, inputOutputCanvasRef.current.width, inputOutputCanvasRef.current.height);
-        // Optionally reset to default size, e.g., 640x640, if preferred when cleared
-        // inputOutputCanvasRef.current.width = MODEL_WIDTH;
-        // inputOutputCanvasRef.current.height = MODEL_HEIGHT;
+      // Clear detection canvas when no image is shown
+      if (canvasRef.current) {
+        const ctxDetect = canvasRef.current.getContext("2d");
+        ctxDetect.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
       }
-      if (originalImageCanvasRef.current) {
-        const ctxOrig = originalImageCanvasRef.current.getContext("2d");
-        ctxOrig.clearRect(0, 0, originalImageCanvasRef.current.width, originalImageCanvasRef.current.height);
+      // Clearing for originalImageCanvas (if needed when imageShow is false)
+      const originalCanvas = document.getElementById('originalImageCanvas');
+      if (originalCanvas) {
+        const ctxOrig = originalCanvas.getContext('2d');
+        ctxOrig.clearRect(0, 0, originalCanvas.width, originalCanvas.height);
       }
     }
-  }, [imageShow, model, imageRef.current?.complete, imageRef.current?.src]); // Dependencies updated
+  }, [imageShow, model, model.net, imageRef.current?.src, imageRef.current?.complete, canvasRef]); // Dependencies updated
 
   return (
     <div className="App">
@@ -79,15 +104,23 @@ const App = () => {
               src="#"
               ref={imageRef}
               onLoad={() => {
-                detect(imageRef.current, model, canvasRef.current);
-                // Display the original image as well
+                // Display the original image on its canvas
                 const originalImageCanvas = document.getElementById('originalImageCanvas');
-                if (originalImageCanvas && imageRef.current.src !== '#') {
-                  const ctx = originalImageCanvas.getContext('2d');
+                if (originalImageCanvas && imageRef.current && imageRef.current.src && imageRef.current.src !== '#') {
                   originalImageCanvas.width = imageRef.current.naturalWidth;
                   originalImageCanvas.height = imageRef.current.naturalHeight;
+                  const ctx = originalImageCanvas.getContext('2d');
                   ctx.drawImage(imageRef.current, 0, 0, imageRef.current.naturalWidth, imageRef.current.naturalHeight);
                 }
+
+                // Trigger detection if model is loaded
+                if (model && model.net && canvasRef.current && imageRef.current) {
+                  // This detect call might be redundant if the useEffect for detection covers it
+                  // Consider if this specific onLoad detection is still needed or if useEffect is sufficient
+                  // For now, keeping it but ensuring model.net is checked
+                  detect(imageRef.current, model, canvasRef.current, (newLoadingState) => setLoading(prev => ({...prev, ...newLoadingState, loading: newLoadingState.loading === undefined ? prev.loading : newLoadingState.loading})));
+                } 
+                setImageShow(true); // Show image and trigger detection via useEffect
               }}
               style={{ display: 'none' }} // Initially hidden, shown by ButtonHandler
             />
@@ -114,6 +147,7 @@ const App = () => {
           {/* Komponen tombol untuk meng-handle aksi */}
           <ButtonHandler
             imageRef={imageRef}
+            setImageShow={setImageShow} // Pass setImageShow to ButtonHandler
           />
         </div>
       </main>

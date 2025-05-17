@@ -44,6 +44,7 @@ export const renderBoxes = (canvasRef, boxes_data, scores_data, classes_data, ra
     const color = colors.get(classes_data[i]);
     const score = (scores_data[i] * 100).toFixed(1);
 
+    
     let [y1_orig, x1_orig, y2_orig, x2_orig] = boxes_data.slice(i * 4, (i + 1) * 4);
 
     // The `canvasRef` for detection now has the dimensions of the original image.
