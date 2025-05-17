@@ -13,41 +13,18 @@ export const renderBoxes = (canvasRef, boxes_data, scores_data, classes_data, ra
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height); // clean canvas
 
   // Draw the original image first
+  // In App.jsx, inputOutputCanvasRef (which is canvasRef here) is set to the natural dimensions of the image.
+  // So, we draw the image directly onto this canvas without further scaling or offsetting here.
   if (originalImageElement && originalImageElement.src && originalImageElement.src !== '#' && originalImageElement.complete) {
-    // Scale the canvas to the model input size, then draw the image, then draw boxes
-    // This ensures box coordinates match the scaled image
-    const modelWidth = canvasRef.width;
-    const modelHeight = canvasRef.height;
-    
-    // Calculate the aspect ratio of the image and canvas
-    const imageAspectRatio = originalImageElement.naturalWidth / originalImageElement.naturalHeight;
-    const canvasAspectRatio = modelWidth / modelHeight;
-
-    let drawWidth, drawHeight, offsetX, offsetY;
-
-    if (imageAspectRatio > canvasAspectRatio) {
-      // Image is wider than canvas
-      drawWidth = modelWidth;
-      drawHeight = modelWidth / imageAspectRatio;
-      offsetX = 0;
-      offsetY = (modelHeight - drawHeight) / 2;
-    } else {
-      // Image is taller than or same aspect ratio as canvas
-      drawHeight = modelHeight;
-      drawWidth = modelHeight * imageAspectRatio;
-      offsetY = 0;
-      offsetX = (modelWidth - drawWidth) / 2;
+    // Ensure canvas dimensions match the original image if they were somehow changed
+    if (canvasRef.width !== originalImageElement.naturalWidth || canvasRef.height !== originalImageElement.naturalHeight) {
+        canvasRef.width = originalImageElement.naturalWidth;
+        canvasRef.height = originalImageElement.naturalHeight;
     }
-    
-    ctx.drawImage(originalImageElement, offsetX, offsetY, drawWidth, drawHeight);
+    ctx.drawImage(originalImageElement, 0, 0, canvasRef.width, canvasRef.height);
   } else if (originalImageElement && (!originalImageElement.src || originalImageElement.src === '#')){
-    // If no image is loaded, or it's the placeholder, keep canvas clear or show a message
+    // If no image is loaded, or it's the placeholder, keep canvas clear
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-    // Optionally, display a message
-    // ctx.fillStyle = "gray";
-    // ctx.font = "16px Arial";
-    // ctx.textAlign = "center";
-    // ctx.fillText("Tidak ada gambar yang dimuat", canvasRef.width / 2, canvasRef.height / 2);
     return; // Do not draw boxes if no image
   }
 
@@ -69,67 +46,20 @@ export const renderBoxes = (canvasRef, boxes_data, scores_data, classes_data, ra
 
     let [y1_orig, x1_orig, y2_orig, x2_orig] = boxes_data.slice(i * 4, (i + 1) * 4);
 
-    // Get the dimensions and offset of the drawn image on the canvas
-    const modelWidth = canvasRef.width;
-    const modelHeight = canvasRef.height;
-    const imageAspectRatio = originalImageElement.naturalWidth / originalImageElement.naturalHeight;
-    const canvasAspectRatio = modelWidth / modelHeight;
-    let drawWidth, drawHeight, offsetX, offsetY;
+    // The `canvasRef` for detection now has the dimensions of the original image.
+    // The original image is drawn at (0,0) on this canvas, filling it.
+    // The `ratios` from `preprocess` are: 
+    //   ratios[0] = model_input_width / original_image_width
+    //   ratios[1] = model_input_height / original_image_height
+    // `boxes_data` (x1_orig, y1_orig, etc.) are coordinates relative to the model's input tensor dimensions.
+    // To get coordinates on the original image (which is now the canvas itself):
+    //   x_on_original_image = x1_orig / ratios[0]
+    //   y_on_original_image = y1_orig / ratios[1]
 
-    if (imageAspectRatio > canvasAspectRatio) {
-      drawWidth = modelWidth;
-      drawHeight = modelWidth / imageAspectRatio;
-      offsetX = 0;
-      offsetY = (modelHeight - drawHeight) / 2;
-    } else {
-      drawHeight = modelHeight;
-      drawWidth = modelHeight * imageAspectRatio;
-      offsetY = 0;
-      offsetX = (modelWidth - drawWidth) / 2;
-    }
-
-    // The model's output coordinates (x1_orig, y1_orig, etc.) are relative to the model's input tensor dimensions
-    // The model's output coordinates (x1_orig, y1_orig, etc.) are relative to the model's input tensor dimensions
-    // (canvasRef.width, canvasRef.height). This input tensor was created by padding the original image to a square
-    // and then resizing that square to the model's input dimensions.
-    // The 'ratios' array contains [xRatio, yRatio], where:
-    // xRatio = model_input_width / original_image_width (after padding to square if necessary, before final resize to model input)
-    // yRatio = model_input_height / original_image_height (similarly)
-    // More accurately, from preprocess:
-    // const xRatio = modelWidth / w; // w is original width, modelWidth is 640 for yolov8
-    // const yRatio = modelHeight / h; // h is original height, modelHeight is 640 for yolov8
-    // These ratios are for scaling from original image to the *padded square input* that was then resized to model dims.
-    // The boxes_data are already scaled to the model input dimensions (e.g., 0-640).
-
-    // We need to map these coordinates to the 'drawWidth' x 'drawHeight' area on the canvas 
-    // where the original, unpadded image is drawn, considering its 'offsetX' and 'offsetY'.
-
-    // x1_orig is a coordinate on the model input (e.g., 0 to 640).
-    // We need to scale it back to the original image's coordinate system first, then to the canvas's drawn image.
-    // Original coordinate on padded image = x1_orig / xRatio (if xRatio was model_dim / original_dim)
-    // But ratios are actually: xRatio = model_input_width / original_image_width_before_padding_but_after_aspect_fit_to_square
-    // And yRatio = model_input_height / original_image_height_before_padding_but_after_aspect_fit_to_square
-    // The `boxes_data` are already in the coordinate system of the model input (e.g. 0-640 for a 640x640 model).
-    // The `ratios` are [x_scale_factor_for_padded_input, y_scale_factor_for_padded_input]
-    // x_scale_factor_for_padded_input = model_input_width / padded_image_width
-    // y_scale_factor_for_padded_input = model_input_height / padded_image_height
-    // The `preprocess` function in `detect.js` calculates ratios as `modelWidth / w` and `modelHeight / h`
-    // where w and h are dimensions of the *original* image, and modelWidth/Height are the target square dimensions (e.g. 640x640)
-    // So, x1_orig / ratios[0] would give coordinate on original image width.
-
-    const x1_on_original = x1_orig / ratios[0];
-    const y1_on_original = y1_orig / ratios[1];
-    const x2_on_original = x2_orig / ratios[0];
-    const y2_on_original = y2_orig / ratios[1];
-
-    // Now scale these original image coordinates to the canvas's drawn image dimensions and add offset.
-    // scaleX_canvas = drawWidth / originalImageElement.naturalWidth;
-    // scaleY_canvas = drawHeight / originalImageElement.naturalHeight;
-
-    const x1 = offsetX + x1_on_original * (drawWidth / originalImageElement.naturalWidth);
-    const y1 = offsetY + y1_on_original * (drawHeight / originalImageElement.naturalHeight);
-    const x2 = offsetX + x2_on_original * (drawWidth / originalImageElement.naturalWidth);
-    const y2 = offsetY + y2_on_original * (drawHeight / originalImageElement.naturalHeight);
+    const x1 = x1_orig / ratios[0];
+    const y1 = y1_orig / ratios[1];
+    const x2 = x2_orig / ratios[0];
+    const y2 = y2_orig / ratios[1];
 
     const width = x2 - x1;
     const height = y2 - y1;

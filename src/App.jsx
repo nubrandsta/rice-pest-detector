@@ -25,34 +25,43 @@ const App = () => {
   const modelName = "yolov11s";
 
   useEffect(() => {
-    // Menunggu TensorFlow.js siap
-    tf.ready().then(async () => {
-      // Memuat model YOLOv11s dari URL
-      const yolov11s = await tf.loadGraphModel(
-        `${window.location.href}/${modelName}_web_model/model.json`,
-        {
-          onProgress: (fractions) => {
-            // Mengupdate progress loading model
-            setLoading({ loading: true, progress: fractions });
-          },
-        }
-      );
+    if (
+      imageShow &&
+      imageRef.current &&
+      imageRef.current.src &&
+      imageRef.current.src !== "#" &&
+      imageRef.current.complete && // Crucial: ensure image is loaded for naturalWidth/Height
+      model &&
+      inputOutputCanvasRef.current
+    ) {
+      // Set detection canvas dimensions to match the original image
+      inputOutputCanvasRef.current.width = imageRef.current.naturalWidth;
+      inputOutputCanvasRef.current.height = imageRef.current.naturalHeight;
 
-      // Melakukan pemanasan model dengan input dummy
-      const dummyInput = tf.ones(yolov11s.inputs[0].shape);
-      const warmupResults = yolov11s.execute(dummyInput);
-
-      // Mengupdate state setelah model siap
-      setLoading({ loading: false, progress: 1 });
-      setModel({
-        net: yolov11s,
-        inputShape: yolov11s.inputs[0].shape,
+      detect(
+        imageRef.current,
+        model,
+        inputOutputCanvasRef.current,
+        setLoading // detect function will call setLoading(true/false)
+      ).catch(error => {
+        console.error("Deteksi gagal:", error); // Indonesian error
+        setLoading(false); // Fallback for safety, ensure loading indicator is turned off
       });
-
-      // Membersihkan memori
-      tf.dispose([warmupResults, dummyInput]);
-    });
-  }, []);
+    } else if (!imageShow) {
+      // Clear both canvases when no image is shown
+      if (inputOutputCanvasRef.current) {
+        const ctxDetect = inputOutputCanvasRef.current.getContext("2d");
+        ctxDetect.clearRect(0, 0, inputOutputCanvasRef.current.width, inputOutputCanvasRef.current.height);
+        // Optionally reset to default size, e.g., 640x640, if preferred when cleared
+        // inputOutputCanvasRef.current.width = MODEL_WIDTH;
+        // inputOutputCanvasRef.current.height = MODEL_HEIGHT;
+      }
+      if (originalImageCanvasRef.current) {
+        const ctxOrig = originalImageCanvasRef.current.getContext("2d");
+        ctxOrig.clearRect(0, 0, originalImageCanvasRef.current.width, originalImageCanvasRef.current.height);
+      }
+    }
+  }, [imageShow, model, imageRef.current?.complete, imageRef.current?.src]); // Dependencies updated
 
   return (
     <div className="App">
